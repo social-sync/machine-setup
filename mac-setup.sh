@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # mac-setup.sh — Idempotent developer workstation bootstrap for macOS.
 #
@@ -238,19 +238,22 @@ fi
 # Install popular plugins if not already present
 OMZ_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
-declare -A OMZ_PLUGINS=(
-  ["zsh-autosuggestions"]="https://github.com/zsh-users/zsh-autosuggestions.git"
-  ["zsh-syntax-highlighting"]="https://github.com/zsh-users/zsh-syntax-highlighting.git"
+OMZ_PLUGIN_NAMES=( "zsh-autosuggestions"  "zsh-syntax-highlighting" )
+OMZ_PLUGIN_URLS=(
+  "https://github.com/zsh-users/zsh-autosuggestions.git"
+  "https://github.com/zsh-users/zsh-syntax-highlighting.git"
 )
 
-for plugin in "${!OMZ_PLUGINS[@]}"; do
+for i in "${!OMZ_PLUGIN_NAMES[@]}"; do
+  plugin="${OMZ_PLUGIN_NAMES[$i]}"
+  url="${OMZ_PLUGIN_URLS[$i]}"
   PLUGIN_DIR="$OMZ_CUSTOM/plugins/$plugin"
   if [[ -d "$PLUGIN_DIR" ]]; then
     success "Oh My Zsh plugin '$plugin' already installed."
     (cd "$PLUGIN_DIR" && git pull --quiet 2>/dev/null) || true
   else
     info "Installing Oh My Zsh plugin '$plugin'…"
-    git clone --quiet "${OMZ_PLUGINS[$plugin]}" "$PLUGIN_DIR"
+    git clone --quiet "$url" "$PLUGIN_DIR"
     success "Plugin '$plugin' installed."
   fi
 done

@@ -46,7 +46,11 @@
 # │  Section 8 — Go                                                          │
 # │    Latest Go via Homebrew. Configures GOPATH in shell profile.           │
 # │                                                                          │
-# │  Section 9 — Shell Aliases                                               │
+# │  Section 9 — 1Password CLI                                               │
+# │    Installs the 1Password CLI (op) via the official Homebrew tap.        │
+# │    Provides secret management and SSH agent integration.                 │
+# │                                                                          │
+# │  Section 10 — Shell Aliases                                              │
 # │    Writes a managed block of team aliases into ~/.zshrc.                 │
 # │    Current aliases: sail, art, pest (Laravel / PHP tooling).             │
 # │                                                                          │
@@ -390,7 +394,37 @@ if ! grep -qF 'GOPATH' "$SHELL_PROFILE" 2>/dev/null; then
   echo 'export PATH="$GOPATH/bin:$PATH"' >> "$SHELL_PROFILE"
 fi
 
-# ─── 9. Shell Aliases ────────────────────────────────────────────────────────
+# ─── 9. 1Password CLI ────────────────────────────────────────────────────────
+
+section "1Password CLI"
+
+# 1Password CLI is distributed via their official Homebrew cask
+if command -v op &>/dev/null; then
+  success "1Password CLI already installed — $(op --version)"
+  brew upgrade --cask 1password-cli 2>/dev/null || true
+else
+  info "Installing 1Password CLI…"
+  brew install --cask 1password-cli
+  success "1Password CLI installed — $(op --version)"
+fi
+
+cat << 'OPEOF'
+
+  NOTE: To use the 1Password CLI you need to sign in:
+
+    eval $(op signin)
+
+  For SSH agent integration, add the following to ~/.ssh/config:
+
+    Host *
+      IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+  This requires the 1Password desktop app with SSH Agent enabled
+  under Settings → Developer → SSH Agent.
+
+OPEOF
+
+# ─── 10. Shell Aliases ────────────────────────────────────────────────────────
 
 section "Shell Aliases"
 
@@ -441,6 +475,7 @@ echo "  Node:   $(node --version 2>/dev/null || echo 'open a new shell')"
 echo "  npm:    $(npm --version 2>/dev/null || echo 'open a new shell')"
 echo "  Python: $(python3 --version 2>/dev/null)"
 echo "  Go:     $(go version 2>/dev/null)"
+echo "  1P CLI: $(op --version 2>/dev/null || echo 'open a new shell')"
 echo "  Docker: $(docker --version 2>/dev/null || echo 'open Docker Desktop to finish setup')"
 echo ""
 

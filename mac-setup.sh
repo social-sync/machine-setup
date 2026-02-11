@@ -9,6 +9,97 @@
 # Safe to re-run at any time. It will skip anything already installed and
 # upgrade what it can.
 #
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │  TABLE OF CONTENTS                                                      │
+# ├──────────────────────────────────────────────────────────────────────────┤
+# │                                                                          │
+# │  Section 1 — Xcode Command Line Tools                                   │
+# │    Prerequisite for Homebrew and most dev tools. Detected via            │
+# │    xcode-select; waits for the async macOS GUI installer if triggered.   │
+# │                                                                          │
+# │  Section 2 — Homebrew                                                    │
+# │    macOS package manager. Handles Apple Silicon (/opt/homebrew) and      │
+# │    Intel (/usr/local) paths. Adds shellenv to the user's profile.        │
+# │                                                                          │
+# │  Section 3 — Zsh & Oh My Zsh                                            │
+# │    Installs latest Zsh via Homebrew and sets it as the default shell.    │
+# │    Installs Oh My Zsh framework plus community plugins:                  │
+# │      • zsh-autosuggestions                                               │
+# │      • zsh-syntax-highlighting                                           │
+# │                                                                          │
+# │  Section 4 — Git                                                         │
+# │    Latest Git via Homebrew (replaces Apple's bundled version).           │
+# │    Prints post-install instructions for configuring user.name,           │
+# │    user.email, and recommended global defaults.                          │
+# │                                                                          │
+# │  Section 5 — Docker Desktop                                              │
+# │    Downloads the official .dmg directly from Docker (not Homebrew        │
+# │    cask, which tends to lag). Auto-detects arm64 vs amd64.               │
+# │                                                                          │
+# │  Section 6 — NVM & Node.js                                              │
+# │    Installs NVM from the official install script, then installs the      │
+# │    latest LTS release of Node.js and sets it as the default.             │
+# │                                                                          │
+# │  Section 7 — Python 3                                                    │
+# │    Latest Python 3 via Homebrew.                                         │
+# │                                                                          │
+# │  Section 8 — Go                                                          │
+# │    Latest Go via Homebrew. Configures GOPATH in shell profile.           │
+# │                                                                          │
+# │  Section 9 — Shell Aliases                                               │
+# │    Writes a managed block of team aliases into ~/.zshrc.                 │
+# │    Current aliases: sail, art, pest (Laravel / PHP tooling).             │
+# │                                                                          │
+# │  Summary — Prints installed versions and Git configuration guide.        │
+# │                                                                          │
+# └──────────────────────────────────────────────────────────────────────────┘
+#
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │  INSTRUCTIONS FOR CLAUDE (AI assistant) — How to maintain this script   │
+# ├──────────────────────────────────────────────────────────────────────────┤
+# │                                                                          │
+# │  This script is designed to be idempotent and extensible. Follow these   │
+# │  rules when making changes:                                              │
+# │                                                                          │
+# │  ADDING A NEW TOOL (Homebrew-based):                                     │
+# │    1. Add a new numbered section following the existing pattern:         │
+# │       - Use `section "Tool Name"` for the header.                        │
+# │       - Check if already installed: `if brew list <pkg> &>/dev/null`.    │
+# │       - Install if missing, upgrade if present.                          │
+# │    2. Increment subsequent section numbers.                              │
+# │    3. Update this table of contents.                                     │
+# │    4. Add the tool's version to the Summary section's version printout.  │
+# │                                                                          │
+# │  ADDING A NEW TOOL (non-Homebrew / custom installer):                    │
+# │    1. Follow the same section pattern.                                   │
+# │    2. Use `command -v <binary>` or check a known install path to         │
+# │       determine if it's already installed.                               │
+# │    3. On re-run, update in place (e.g. re-run installer, git pull).     │
+# │    4. If PATH or env vars are needed, add them to $SHELL_PROFILE         │
+# │       guarded by `if ! grep -qF '<marker>' ...` to avoid duplicates.    │
+# │                                                                          │
+# │  ADDING A NEW ALIAS:                                                     │
+# │    1. Append to the ALIASES array in Section 9. That's it — the          │
+# │       managed block pattern handles idempotent replacement.              │
+# │                                                                          │
+# │  ADDING AN OH MY ZSH PLUGIN:                                            │
+# │    1. Add an entry to the OMZ_PLUGINS associative array in Section 3.   │
+# │    2. Remind the user to enable it in the plugins=() line of .zshrc.    │
+# │                                                                          │
+# │  GENERAL RULES:                                                          │
+# │    • Every section MUST be safe to run repeatedly with no side effects.  │
+# │    • Never blindly append to files — always grep for a marker first.     │
+# │    • Use `set -euo pipefail` (already set) — handle expected failures    │
+# │      with `|| true` or explicit checks.                                  │
+# │    • Support both Apple Silicon (arm64) and Intel (x86_64) Macs.        │
+# │    • Keep the section numbering and table of contents in sync.           │
+# │    • Prefer `brew install` for tools that have a formula — it makes      │
+# │      upgrades trivial on re-run.                                         │
+# │    • For tools where Homebrew lags significantly behind (e.g. Docker),   │
+# │      download the official installer directly.                           │
+# │                                                                          │
+# └──────────────────────────────────────────────────────────────────────────┘
+#
 set -euo pipefail
 
 # ─── Helpers ────────────────────────────────────────────────────────────────

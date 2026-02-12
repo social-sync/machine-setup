@@ -134,6 +134,24 @@ fi
 
 ARCH="$(uname -m)"  # arm64 or x86_64
 
+# ─── Sudo Pre-flight ───────────────────────────────────────────────────────
+# Several steps (Homebrew install, changing default shell, /etc/shells) need
+# sudo. We prompt once up front so the script isn't interrupted mid-way.
+
+info "This script requires administrator privileges for some steps."
+info "You may be prompted for your password."
+
+if ! sudo -v 2>/dev/null; then
+  err "Could not obtain sudo access. Please ensure this user is an Administrator."
+  err "You can check in System Settings → Users & Groups."
+  exit 1
+fi
+
+# Keep sudo alive in the background for the duration of the script
+while true; do sudo -n true; sleep 50; kill -0 "$" || exit; done 2>/dev/null &
+SUDO_KEEPALIVE_PID=$!
+trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null' EXIT
+
 # ─── 1. Xcode Command Line Tools ───────────────────────────────────────────
 
 section "Xcode Command Line Tools"

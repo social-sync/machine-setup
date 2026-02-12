@@ -180,6 +180,10 @@ if command -v brew &>/dev/null; then
   brew update
 else
   info "Installing Homebrew…"
+  # Refresh sudo credential immediately before install — Homebrew uses
+  # `sudo -n` (non-interactive) when NONINTERACTIVE is set, which will
+  # fail if the cached timestamp has expired.
+  sudo -v
   NONINTERACTIVE=1 /bin/bash -c \
     "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 

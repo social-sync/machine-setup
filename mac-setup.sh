@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # mac-setup.sh — Idempotent developer workstation bootstrap for macOS.
 #
@@ -32,22 +32,24 @@
 # │    Prints post-install instructions for configuring user.name,           │
 # │    user.email, and recommended global defaults.                          │
 # │                                                                          │
-# │  Section 5 — Docker Desktop                                              │
+# │  Section 5 — Visual Studio Code                                          │
+# │    Installs VS Code via Homebrew cask. The cask is officially            │
+# │    maintained by Microsoft and VS Code auto-updates itself after install.│
+# │                                                                          │
+# │  Section 6 — Docker Desktop                                              │
 # │    Downloads the official .dmg directly from Docker (not Homebrew        │
 # │    cask, which tends to lag). Auto-detects arm64 vs amd64.               │
 # │                                                                          │
-# │  Section 6 — NVM & Node.js                                              │
+# │  Section 7 — NVM, Node.js & pnpm                                        │
 # │    Installs NVM from the official install script, then installs the      │
-# │    latest LTS release of Node.js and sets it as the default.             │
+# │    latest LTS release of Node.js, sets it as default, and installs       │
+# │    pnpm globally as the package manager.                                 │
 # │                                                                          │
-# │  Section 7 — Python 3                                                    │
-# │    Latest Python 3 via Homebrew.                                         │
+# │  Section 8 — Claude Code                                                 │
+# │    Installs the Claude Code CLI for agentic coding from the terminal.    │
 # │                                                                          │
-# │  Section 8 — Go                                                          │
-# │    Latest Go via Homebrew. Configures GOPATH in shell profile.           │
-# │                                                                          │
-# │  Section 9 — 1Password CLI                                               │
-# │    Installs the 1Password CLI (op) via the official Homebrew tap.        │
+# │  Section 9 — 1Password CLI                                              │
+# │    Installs the 1Password CLI (op) via the official Homebrew cask.       │
 # │    Provides secret management and SSH agent integration.                 │
 # │                                                                          │
 # │  Section 10 — Shell Aliases                                              │
@@ -83,11 +85,12 @@
 # │       guarded by `if ! grep -qF '<marker>' ...` to avoid duplicates.    │
 # │                                                                          │
 # │  ADDING A NEW ALIAS:                                                     │
-# │    1. Append to the ALIASES array in Section 9. That's it — the          │
+# │    1. Append to the ALIASES array in Section 10. That's it — the         │
 # │       managed block pattern handles idempotent replacement.              │
 # │                                                                          │
 # │  ADDING AN OH MY ZSH PLUGIN:                                            │
-# │    1. Add an entry to the OMZ_PLUGINS associative array in Section 3.   │
+# │    1. Add an entry to the OMZ_PLUGIN_NAMES and OMZ_PLUGIN_URLS          │
+# │       parallel arrays in Section 3.                                      │
 # │    2. Remind the user to enable it in the plugins=() line of .zshrc.    │
 # │                                                                          │
 # │  GENERAL RULES:                                                          │
@@ -101,6 +104,8 @@
 # │      upgrades trivial on re-run.                                         │
 # │    • For tools where Homebrew lags significantly behind (e.g. Docker),   │
 # │      download the official installer directly.                           │
+# │    • When renumbering sections, keep comment headers on a SINGLE LINE.   │
+# │      Do NOT split the trailing dashes onto a separate line.              │
 # │                                                                          │
 # └──────────────────────────────────────────────────────────────────────────┘
 #
@@ -148,7 +153,7 @@ if ! sudo -v 2>/dev/null; then
 fi
 
 # Keep sudo alive in the background for the duration of the script
-while true; do sudo -n true; sleep 50; kill -0 "$" || exit; done 2>/dev/null &
+while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null &
 SUDO_KEEPALIVE_PID=$!
 trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null' EXIT
 
@@ -214,7 +219,7 @@ if [[ -n "$SHELL_PROFILE" ]]; then
   fi
 fi
 
-# ─── 3. Zsh & Oh My Zsh ─────────────────────────────────────────────────────
+# ─── 3. Zsh & Oh My Zsh ────────────────────────────────────────────────────
 
 section "Zsh & Oh My Zsh"
 
@@ -304,7 +309,7 @@ else
   success "Git installed — $(git --version)"
 fi
 
-# ─── 5. Visual Studio Code ───────────────────────────────────────────────────
+# ─── 5. Visual Studio Code ─────────────────────────────────────────────────
 
 section "Visual Studio Code"
 
@@ -357,9 +362,9 @@ else
   info "Please open Docker Desktop from /Applications to complete initial setup."
 fi
 
-# ─── 7. NVM & Node.js ──────────────────────────────────────────────────────
+# ─── 7. NVM, Node.js & pnpm ────────────────────────────────────────────────
 
-section "NVM & Node.js"
+section "NVM, Node.js & pnpm"
 
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
@@ -407,42 +412,38 @@ else
   success "Node.js $(node --version) installed and set as default."
 fi
 
-# ─── 8. Python ──────────────────────────────────────────────────────────────
-
-section "Python"
-
-if brew list python@3 &>/dev/null || brew list python@3.12 &>/dev/null || brew list python@3.13 &>/dev/null; then
-  success "Python 3 already installed via Homebrew — $(python3 --version)"
-  brew upgrade python@3 2>/dev/null || brew upgrade python3 2>/dev/null || true
+# pnpm
+if command -v pnpm &>/dev/null; then
+  success "pnpm already installed — v$(pnpm --version)"
+  info "Upgrading pnpm…"
+  corepack prepare pnpm@latest --activate 2>/dev/null || npm install -g pnpm@latest
 else
-  info "Installing Python 3 via Homebrew…"
-  brew install python@3
-  success "Python installed — $(python3 --version)"
+  info "Installing pnpm…"
+  # Prefer corepack (ships with Node 16.13+), fall back to npm global install
+  if command -v corepack &>/dev/null; then
+    corepack enable
+    corepack prepare pnpm@latest --activate
+  else
+    npm install -g pnpm
+  fi
+  success "pnpm installed — v$(pnpm --version)"
 fi
 
-# ─── 9. Go ──────────────────────────────────────────────────────────────────
+# ─── 8. Claude Code ────────────────────────────────────────────────────────
 
-section "Go"
+section "Claude Code"
 
-if brew list go &>/dev/null; then
-  success "Go already installed via Homebrew — $(go version)"
-  brew upgrade go 2>/dev/null || true
+if command -v claude &>/dev/null; then
+  success "Claude Code already installed — $(claude --version 2>/dev/null || echo 'installed')"
+  info "Re-running installer to check for updates…"
+  curl -fsSL https://claude.ai/install.sh | bash 2>/dev/null || true
 else
-  info "Installing Go via Homebrew…"
-  brew install go
-  success "Go installed — $(go version)"
+  info "Installing Claude Code…"
+  curl -fsSL https://claude.ai/install.sh | bash
+  success "Claude Code installed."
 fi
 
-# Ensure GOPATH is set
-if ! grep -qF 'GOPATH' "$SHELL_PROFILE" 2>/dev/null; then
-  info "Adding GOPATH to $SHELL_PROFILE"
-  echo "" >> "$SHELL_PROFILE"
-  echo "# Go" >> "$SHELL_PROFILE"
-  echo 'export GOPATH="$HOME/go"' >> "$SHELL_PROFILE"
-  echo 'export PATH="$GOPATH/bin:$PATH"' >> "$SHELL_PROFILE"
-fi
-
-# ─── 10. 1Password CLI ────────────────────────────────────────────────────────
+# ─── 9. 1Password CLI ──────────────────────────────────────────────────────
 
 section "1Password CLI"
 
@@ -472,7 +473,7 @@ cat << 'OPEOF'
 
 OPEOF
 
-# ─── 11. Shell Aliases ────────────────────────────────────────────────────────
+# ─── 10. Shell Aliases ─────────────────────────────────────────────────────
 
 section "Shell Aliases"
 
@@ -518,13 +519,13 @@ section "Setup Complete!"
 
 echo ""
 echo "Installed versions:"
-echo "  Git:    $(git --version)"
-echo "  Node:   $(node --version 2>/dev/null || echo 'open a new shell')"
-echo "  npm:    $(npm --version 2>/dev/null || echo 'open a new shell')"
-echo "  Python: $(python3 --version 2>/dev/null)"
-echo "  Go:     $(go version 2>/dev/null)"
-echo "  1P CLI: $(op --version 2>/dev/null || echo 'open a new shell')"
-echo "  Docker: $(docker --version 2>/dev/null || echo 'open Docker Desktop to finish setup')"
+echo "  Git:        $(git --version)"
+echo "  Node:       $(node --version 2>/dev/null || echo 'open a new shell')"
+echo "  npm:        $(npm --version 2>/dev/null || echo 'open a new shell')"
+echo "  pnpm:       $(pnpm --version 2>/dev/null || echo 'open a new shell')"
+echo "  Claude:     $(claude --version 2>/dev/null || echo 'open a new shell')"
+echo "  1P CLI:     $(op --version 2>/dev/null || echo 'open a new shell')"
+echo "  Docker:     $(docker --version 2>/dev/null || echo 'open Docker Desktop to finish setup')"
 echo ""
 
 # ─── Git Configuration Reminder ─────────────────────────────────────────────

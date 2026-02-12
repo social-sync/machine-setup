@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # mac-setup.sh — Idempotent developer workstation bootstrap for macOS.
 #

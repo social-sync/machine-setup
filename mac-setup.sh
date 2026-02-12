@@ -304,7 +304,31 @@ else
   success "Git installed — $(git --version)"
 fi
 
-# ─── 5. Docker Desktop ─────────────────────────────────────────────────────
+# ─── 5. Visual Studio Code ───────────────────────────────────────────────────
+
+section "Visual Studio Code"
+
+if brew list --cask visual-studio-code &>/dev/null || [[ -d "/Applications/Visual Studio Code.app" ]]; then
+  success "Visual Studio Code already installed."
+  brew upgrade --cask visual-studio-code 2>/dev/null || true
+else
+  info "Installing Visual Studio Code…"
+  brew install --cask visual-studio-code
+  success "Visual Studio Code installed."
+fi
+
+# Add 'code' command to PATH if not already available
+if ! command -v code &>/dev/null; then
+  info "Linking 'code' command to PATH…"
+  VSCODE_BIN="/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+  if [[ -d "$VSCODE_BIN" ]] && ! grep -qF 'Visual Studio Code' "$SHELL_PROFILE" 2>/dev/null; then
+    echo "" >> "$SHELL_PROFILE"
+    echo '# VS Code' >> "$SHELL_PROFILE"
+    echo "export PATH=\"\$PATH:$VSCODE_BIN\"" >> "$SHELL_PROFILE"
+  fi
+fi
+
+# ─── 6. Docker Desktop ─────────────────────────────────────────────────────
 
 section "Docker Desktop"
 
@@ -333,7 +357,7 @@ else
   info "Please open Docker Desktop from /Applications to complete initial setup."
 fi
 
-# ─── 6. NVM & Node.js ──────────────────────────────────────────────────────
+# ─── 7. NVM & Node.js ──────────────────────────────────────────────────────
 
 section "NVM & Node.js"
 
@@ -383,8 +407,7 @@ else
   success "Node.js $(node --version) installed and set as default."
 fi
 
-# ─── 7. Python
- ──────────────────────────────────────────────────────────────
+# ─── 8. Python ──────────────────────────────────────────────────────────────
 
 section "Python"
 
@@ -397,7 +420,7 @@ else
   success "Python installed — $(python3 --version)"
 fi
 
-# ─── 8. Go ──────────────────────────────────────────────────────────────────
+# ─── 9. Go ──────────────────────────────────────────────────────────────────
 
 section "Go"
 
@@ -419,7 +442,7 @@ if ! grep -qF 'GOPATH' "$SHELL_PROFILE" 2>/dev/null; then
   echo 'export PATH="$GOPATH/bin:$PATH"' >> "$SHELL_PROFILE"
 fi
 
-# ─── 9. 1Password CLI ────────────────────────────────────────────────────────
+# ─── 10. 1Password CLI ────────────────────────────────────────────────────────
 
 section "1Password CLI"
 
@@ -449,7 +472,7 @@ cat << 'OPEOF'
 
 OPEOF
 
-# ─── 10. Shell Aliases ────────────────────────────────────────────────────────
+# ─── 11. Shell Aliases ────────────────────────────────────────────────────────
 
 section "Shell Aliases"
 

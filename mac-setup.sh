@@ -454,6 +454,7 @@ declare -a ALIASES=(
   "alias sail='./vendor/bin/sail'"
   "alias art='php artisan'"
   "alias pest='./vendor/bin/pest'"
+  "alias pintd='./vendor/bin/pint --dirty'"
 )
 
 ALIAS_MARKER="# ── Team Aliases (managed by mac-setup.sh) ──"

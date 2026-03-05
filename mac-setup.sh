@@ -48,10 +48,13 @@
 # │    Installs the 1Password CLI (op) via the official Homebrew cask.       │
 # │    Provides secret management and SSH agent integration.                 │
 # │                                                                          │
-# │  Section 9 — Sites Directory                                             │
+# │  Section 9 — MySQL Client                                                │
+# │    Installs mysql-client@8.4 via Homebrew and force-links it to PATH.   │
+# │                                                                          │
+# │  Section 10 — Sites Directory                                            │
 # │    Creates ~/Sites if it doesn't already exist.                          │
 # │                                                                          │
-# │  Section 10 — Shell Aliases                                              │
+# │  Section 11 — Shell Aliases                                              │
 # │    Writes a managed block of team aliases into ~/.zshrc.                 │
 # │    Current aliases: sail, art, pest, pintd (Laravel / PHP tooling).      │
 # │                                                                          │
@@ -435,7 +438,23 @@ cat << 'OPEOF'
 
 OPEOF
 
-# ─── 9. Sites Directory ───────────────────────────────────────────────────
+# ─── 9. MySQL Client ─────────────────────────────────────────────────────
+
+section "MySQL Client"
+
+if brew list mysql-client@8.4 &>/dev/null; then
+  success "mysql-client@8.4 already installed."
+  brew upgrade mysql-client@8.4 2>/dev/null || true
+else
+  info "Installing mysql-client@8.4…"
+  brew install mysql-client@8.4
+  success "mysql-client@8.4 installed."
+fi
+
+info "Force-linking mysql-client@8.4…"
+brew link mysql-client@8.4 --force 2>/dev/null || true
+
+# ─── 10. Sites Directory ──────────────────────────────────────────────────
 
 section "Sites Directory"
 
@@ -447,7 +466,7 @@ else
   success "~/Sites created."
 fi
 
-# ─── 10. Shell Aliases ────────────────────────────────────────────────────
+# ─── 11. Shell Aliases ────────────────────────────────────────────────────
 
 section "Shell Aliases"
 

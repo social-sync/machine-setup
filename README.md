@@ -22,6 +22,7 @@ Run this in Terminal to set up a new Mac:
 - **NVM, Node.js & pnpm** — NVM from the official installer, latest LTS Node, and pnpm via corepack
 - **Claude Code** — CLI for agentic coding from the terminal
 - **1Password CLI** — secret management and SSH agent integration
+- **MySQL Client 8.4** — command-line client via Homebrew, force-linked to PATH
 
 ## Shell aliases
 

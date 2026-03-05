@@ -48,9 +48,12 @@
 # │    Installs the 1Password CLI (op) via the official Homebrew cask.       │
 # │    Provides secret management and SSH agent integration.                 │
 # │                                                                          │
-# │  Section 9 — Shell Aliases                                               │
+# │  Section 9 — Sites Directory                                             │
+# │    Creates ~/Sites if it doesn't already exist.                          │
+# │                                                                          │
+# │  Section 10 — Shell Aliases                                              │
 # │    Writes a managed block of team aliases into ~/.zshrc.                 │
-# │    Current aliases: sail, art, pest (Laravel / PHP tooling).             │
+# │    Current aliases: sail, art, pest, pintd (Laravel / PHP tooling).      │
 # │                                                                          │
 # │  Summary — Prints installed versions and Git configuration guide.        │
 # │                                                                          │
@@ -430,17 +433,21 @@ cat << 'OPEOF'
 
     eval $(op signin)
 
-  For SSH agent integration, add the following to ~/.ssh/config:
-
-    Host *
-      IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-
-  This requires the 1Password desktop app with SSH Agent enabled
-  under Settings → Developer → SSH Agent.
-
 OPEOF
 
-# ─── 9. Shell Aliases ─────────────────────────────────────────────────────
+# ─── 9. Sites Directory ───────────────────────────────────────────────────
+
+section "Sites Directory"
+
+if [[ -d "$HOME/Sites" ]]; then
+  success "~/Sites already exists."
+else
+  info "Creating ~/Sites…"
+  mkdir -p "$HOME/Sites"
+  success "~/Sites created."
+fi
+
+# ─── 10. Shell Aliases ────────────────────────────────────────────────────
 
 section "Shell Aliases"
 

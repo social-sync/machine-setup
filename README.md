@@ -63,15 +63,6 @@ Sign in to 1Password CLI:
 eval $(op signin)
 ```
 
-For SSH agent integration, add the following to `~/.ssh/config`:
-
-```
-Host *
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-```
-
-This requires the 1Password desktop app with SSH Agent enabled under Settings > Developer > SSH Agent.
-
 ### Oh My Zsh plugins
 
 Enable the installed plugins by updating the `plugins` line in `~/.zshrc`:

@@ -36,25 +36,27 @@
 # │    Installs VS Code via Homebrew cask. The cask is officially            │
 # │    maintained by Microsoft and VS Code auto-updates itself after install.│
 # │                                                                          │
-# │  Section 6 — Docker Desktop                                              │
-# │    Downloads the official .dmg directly from Docker (not Homebrew        │
-# │    cask, which tends to lag). Auto-detects arm64 vs amd64.               │
-# │                                                                          │
-# │  Section 7 — NVM, Node.js & pnpm                                        │
+# │  Section 6 — NVM, Node.js & pnpm                                        │
 # │    Installs NVM from the official install script, then installs the      │
 # │    latest LTS release of Node.js, sets it as default, and installs       │
 # │    pnpm globally as the package manager.                                 │
 # │                                                                          │
-# │  Section 8 — Claude Code                                                 │
+# │  Section 7 — Claude Code                                                 │
 # │    Installs the Claude Code CLI for agentic coding from the terminal.    │
 # │                                                                          │
-# │  Section 9 — 1Password CLI                                              │
+# │  Section 8 — 1Password CLI                                              │
 # │    Installs the 1Password CLI (op) via the official Homebrew cask.       │
 # │    Provides secret management and SSH agent integration.                 │
 # │                                                                          │
-# │  Section 10 — Shell Aliases                                              │
+# │  Section 9 — MySQL Client                                                │
+# │    Installs mysql-client@8.4 via Homebrew and force-links it to PATH.   │
+# │                                                                          │
+# │  Section 10 — Sites Directory                                            │
+# │    Creates ~/Sites if it doesn't already exist.                          │
+# │                                                                          │
+# │  Section 11 — Shell Aliases                                              │
 # │    Writes a managed block of team aliases into ~/.zshrc.                 │
-# │    Current aliases: sail, art, pest (Laravel / PHP tooling).             │
+# │    Current aliases: sail, art, pest, pintd (Laravel / PHP tooling).      │
 # │                                                                          │
 # │  Summary — Prints installed versions and Git configuration guide.        │
 # │                                                                          │
@@ -333,36 +335,7 @@ if ! command -v code &>/dev/null; then
   fi
 fi
 
-# ─── 6. Docker Desktop ─────────────────────────────────────────────────────
-
-section "Docker Desktop"
-
-if [[ -d "/Applications/Docker.app" ]]; then
-  success "Docker Desktop already installed."
-  info "To update Docker Desktop, use its built-in updater (Docker menu → Check for Updates)."
-else
-  info "Downloading Docker Desktop…"
-
-  if [[ "$ARCH" == "arm64" ]]; then
-    DOCKER_DMG_URL="https://desktop.docker.com/mac/main/arm64/Docker.dmg"
-  else
-    DOCKER_DMG_URL="https://desktop.docker.com/mac/main/amd64/Docker.dmg"
-  fi
-
-  DOCKER_DMG="/tmp/Docker.dmg"
-  curl -fSL -o "$DOCKER_DMG" "$DOCKER_DMG_URL"
-
-  info "Mounting and installing Docker Desktop…"
-  hdiutil attach "$DOCKER_DMG" -nobrowse -quiet
-  cp -R "/Volumes/Docker/Docker.app" /Applications/ 2>/dev/null || true
-  hdiutil detach "/Volumes/Docker" -quiet
-  rm -f "$DOCKER_DMG"
-
-  success "Docker Desktop installed."
-  info "Please open Docker Desktop from /Applications to complete initial setup."
-fi
-
-# ─── 7. NVM, Node.js & pnpm ────────────────────────────────────────────────
+# ─── 6. NVM, Node.js & pnpm ────────────────────────────────────────────────
 
 section "NVM, Node.js & pnpm"
 
@@ -429,7 +402,7 @@ else
   success "pnpm installed — v$(pnpm --version)"
 fi
 
-# ─── 8. Claude Code ────────────────────────────────────────────────────────
+# ─── 7. Claude Code ────────────────────────────────────────────────────────
 
 section "Claude Code"
 
@@ -443,7 +416,7 @@ else
   success "Claude Code installed."
 fi
 
-# ─── 9. 1Password CLI ──────────────────────────────────────────────────────
+# ─── 8. 1Password CLI ──────────────────────────────────────────────────────
 
 section "1Password CLI"
 
@@ -463,17 +436,37 @@ cat << 'OPEOF'
 
     eval $(op signin)
 
-  For SSH agent integration, add the following to ~/.ssh/config:
-
-    Host *
-      IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-
-  This requires the 1Password desktop app with SSH Agent enabled
-  under Settings → Developer → SSH Agent.
-
 OPEOF
 
-# ─── 10. Shell Aliases ─────────────────────────────────────────────────────
+# ─── 9. MySQL Client ─────────────────────────────────────────────────────
+
+section "MySQL Client"
+
+if brew list mysql-client@8.4 &>/dev/null; then
+  success "mysql-client@8.4 already installed."
+  brew upgrade mysql-client@8.4 2>/dev/null || true
+else
+  info "Installing mysql-client@8.4…"
+  brew install mysql-client@8.4
+  success "mysql-client@8.4 installed."
+fi
+
+info "Force-linking mysql-client@8.4…"
+brew link mysql-client@8.4 --force 2>/dev/null || true
+
+# ─── 10. Sites Directory ──────────────────────────────────────────────────
+
+section "Sites Directory"
+
+if [[ -d "$HOME/Sites" ]]; then
+  success "~/Sites already exists."
+else
+  info "Creating ~/Sites…"
+  mkdir -p "$HOME/Sites"
+  success "~/Sites created."
+fi
+
+# ─── 11. Shell Aliases ────────────────────────────────────────────────────
 
 section "Shell Aliases"
 
@@ -487,6 +480,7 @@ declare -a ALIASES=(
   "alias sail='./vendor/bin/sail'"
   "alias art='php artisan'"
   "alias pest='./vendor/bin/pest'"
+  "alias pintd='./vendor/bin/pint --dirty'"
 )
 
 ALIAS_MARKER="# ── Team Aliases (managed by mac-setup.sh) ──"
@@ -525,7 +519,6 @@ echo "  npm:        $(npm --version 2>/dev/null || echo 'open a new shell')"
 echo "  pnpm:       $(pnpm --version 2>/dev/null || echo 'open a new shell')"
 echo "  Claude:     $(claude --version 2>/dev/null || echo 'open a new shell')"
 echo "  1P CLI:     $(op --version 2>/dev/null || echo 'open a new shell')"
-echo "  Docker:     $(docker --version 2>/dev/null || echo 'open Docker Desktop to finish setup')"
 echo ""
 
 # ─── Git Configuration Reminder ─────────────────────────────────────────────
